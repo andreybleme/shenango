@@ -77,6 +77,9 @@ struct proc {
 	/* scheduler data */
 	struct sched_spec	sched_cfg;
 
+	/* the indirection table */
+	uint32_t		flow_tbl[NCPU];
+
 	/* runtime threads */
 	unsigned int		thread_count;
 	unsigned int		active_thread_count;
@@ -302,7 +305,7 @@ extern void cores_init_proc(struct proc *p);
 extern void cores_free_proc(struct proc *p);
 extern int cores_pin_thread(pid_t tid, int core);
 extern bool cores_park_kthread(struct thread *t, bool force);
-extern struct thread *cores_add_core(struct proc *p);
+extern struct thread *cores_add_core(struct proc *p, int affinity_core);
 extern void cores_adjust_assignments();
 extern void proc_set_overloaded(struct proc *p);
 extern unsigned int get_nr_avail_cores(void);

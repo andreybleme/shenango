@@ -19,6 +19,9 @@
 
 static struct shm_region ingress_mbuf_region;
 
+unsigned int affinity_core = 0;
+uint32_t last_hash = 0;
+
 /*
  * Prepend rx_net_hdr preamble to ingress packets.
  */
@@ -58,12 +61,45 @@ bool rx_send_to_runtime(struct proc *p, uint32_t hash, uint64_t cmd,
 			unsigned long payload)
 {
 	struct thread *th;
+	uint16_t i;
+	/*
+	* Simple memoization to avoid looping the same RSS hash repeatedly
+	*/ 
+    if (last_hash != hash) {
+		/* If current RSS hash has no affinity core assigned, assign it
+		*  Else: skip the loop, use the assigned affinity core
+		*
+		*/
+		printf("\n ------------------------ will loop \n");
+		for (i = 0; i < NCORES; i++) {
+			if (p->flow_tbl[i] == -1) {
+				p->flow_tbl[i] = hash;
+				affinity_core = i;
+				printf("\n<< if >>");
+				break;
+			} else if (p->flow_tbl[i] == hash) {
+				printf("\n << else >>");
+				break;	
+			}
+		}
+	}
+	
+	last_hash = hash;
 
 	if (likely(p->active_thread_count > 0)) {
 		/* load balance between active threads */
 		th = p->active_threads[hash % p->active_thread_count];
+
+		/* Get a thread from the active CPU to use */
+		// for (i = 0; i < p->active_thread_count; i++) {
+		// 	if (p->active_threads[i]->core == affinity_core) {
+		// 		th = p->active_threads[i];
+		// 	}
+		// }
+		// printf("\n --- if Assigned RSS %d to core %d", hash, th->core);
 	} else if (p->sched_cfg.guaranteed_cores > 0 || get_nr_avail_cores() > 0) {
-		th = cores_add_core(p);
+		// pass hash and core suggested by the table
+		th = cores_add_core(p, affinity_core);
 		if (unlikely(!th))
 			return false;
 	} else {
