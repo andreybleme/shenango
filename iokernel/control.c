@@ -78,6 +78,7 @@ static struct proc *control_create_proc(mem_key_t key, size_t len, pid_t pid,
 	       sizeof(*threads) * hdr.thread_count);
 
 	p->pid = pid;
+	p->iokernel_id = 0;
 	ref_init(&p->ref);
 	reg.base = shbuf;
 	reg.len = len;

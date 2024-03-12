@@ -32,7 +32,7 @@ static const struct init_entry iok_init_handlers[] = {
 	IOK_INITIALIZER(cores),
 
 	/* control plane */
-	IOK_INITIALIZER(control),
+	// IOK_INITIALIZER(control),
 
 	/* data plane */
 	IOK_INITIALIZER(dpdk),
@@ -40,6 +40,18 @@ static const struct init_entry iok_init_handlers[] = {
 	IOK_INITIALIZER(tx),
 	IOK_INITIALIZER(dp_clients),
 	IOK_INITIALIZER(dpdk_late),
+};
+
+/* iokernel aux subsystem initialization */
+static const struct init_entry iok_aux_init_handlers[] = {
+	/* base */
+	IOK_INITIALIZER(base),
+
+	/* general iokernel */
+	IOK_INITIALIZER(cores),
+
+	/* control plane */
+	IOK_INITIALIZER(control),
 };
 
 static int run_init_handlers(const char *phase, const struct init_entry *h,
@@ -126,11 +138,15 @@ void dataplane_loop()
 int main(int argc, char *argv[])
 {
 	int ret;
+	int ret_aux;
 
 	ret = run_init_handlers("iokernel", iok_init_handlers,
 			ARRAY_SIZE(iok_init_handlers));
 	if (ret)
 		return ret;
+	ret_aux = run_init_handlers("iokernel_aux", iok_aux_init_handlers, ARRAY_SIZE(iok_aux_init_handlers));
+	if (ret_aux)
+		return ret_aux;
 
 	dataplane_loop();
 	return 0;
